@@ -16,6 +16,7 @@ interface UseUserManagerReturn {
   fetchUserById: (id: string) => Promise<User | null>;
   createUser: (userData: Partial<User>) => Promise<boolean>;
   updateUser: (id: string, userData: Partial<User>) => Promise<boolean>;
+  toggleUserStatus: (id: string) => Promise<boolean>;
   deleteUser: (id: string) => Promise<boolean>;
   searchUsers: (query: string) => Promise<void>;
   fetchUserActivity: (userId: string, filters?: any) => Promise<void>;
@@ -96,6 +97,27 @@ export const useUserManager = (): UseUserManagerReturn => {
       return false;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update user';
+      setError(message);
+      toast.error(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Toggle user status
+  const toggleUserStatus = useCallback(async (id: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const updatedUser = await userApi.toggleUserStatus(id);
+      if (updatedUser) {
+        setUsers(prev => prev.map(user => user.id === id ? updatedUser : user));
+        toast.success(`User status updated successfully`);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to toggle user status';
       setError(message);
       toast.error(message);
       return false;
@@ -220,6 +242,7 @@ export const useUserManager = (): UseUserManagerReturn => {
     fetchUserById,
     createUser,
     updateUser,
+    toggleUserStatus,
     deleteUser,
     searchUsers,
     fetchUserActivity,

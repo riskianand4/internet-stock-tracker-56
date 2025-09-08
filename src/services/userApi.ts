@@ -2,22 +2,67 @@ import { apiClient } from '@/services/apiClient';
 import { User, UserActivity, Role } from '@/types/users';
 import { handleApiResponse, safeApiCall } from '@/services/apiResponseHandler';
 
+// Data mapper to convert backend data to frontend format
+const mapBackendUserToFrontend = (backendUser: any): User => {
+  return {
+    id: backendUser._id || backendUser.id,
+    name: backendUser.name,
+    email: backendUser.email,
+    role: backendUser.role === 'super_admin' ? 'superadmin' : backendUser.role,
+    status: backendUser.isActive === false ? 'inactive' : 'active',
+    avatar: backendUser.avatar,
+    phone: backendUser.phone,
+    department: backendUser.department || '',
+    position: backendUser.position || '',
+    createdAt: new Date(backendUser.createdAt || backendUser.created_at),
+    lastLogin: backendUser.lastLogin ? new Date(backendUser.lastLogin) : undefined,
+    permissions: backendUser.permissions || []
+  };
+};
+
+// Data mapper to convert frontend data to backend format
+const mapFrontendUserToBackend = (frontendUser: Partial<User>): any => {
+  const backendUser: any = {};
+  
+  if (frontendUser.name) backendUser.name = frontendUser.name;
+  if (frontendUser.email) backendUser.email = frontendUser.email;
+  if (frontendUser.role) {
+    backendUser.role = frontendUser.role === 'superadmin' ? 'super_admin' : frontendUser.role;
+  }
+  if (frontendUser.status) {
+    backendUser.isActive = frontendUser.status === 'active';
+  }
+  if (frontendUser.avatar) backendUser.avatar = frontendUser.avatar;
+  if (frontendUser.phone) backendUser.phone = frontendUser.phone;
+  if (frontendUser.department) backendUser.department = frontendUser.department;
+  if (frontendUser.position) backendUser.position = frontendUser.position;
+  if (frontendUser.permissions) backendUser.permissions = frontendUser.permissions;
+  
+  return backendUser;
+};
+
 // Get all users
 export const getAllUsers = async (): Promise<User[]> => {
-  const response = await safeApiCall<User[]>(
+  const response = await safeApiCall<any[]>(
     () => apiClient.get('/api/users'),
     'Failed to fetch users'
   );
-  return response.success ? (response.data || []) : [];
+  if (response.success && response.data) {
+    return response.data.map(mapBackendUserToFrontend);
+  }
+  return [];
 };
 
 // Get user by ID
 export const getUserById = async (id: string): Promise<User | null> => {
-  const response = await safeApiCall<User>(
+  const response = await safeApiCall<any>(
     () => apiClient.get(`/api/users/${id}`),
     'Failed to fetch user'
   );
-  return response.success ? (response.data || null) : null;
+  if (response.success && response.data) {
+    return mapBackendUserToFrontend(response.data);
+  }
+  return null;
 };
 
 // Create new user
@@ -31,11 +76,27 @@ export const createUser = async (userData: Partial<User>): Promise<User | null> 
 
 // Update user
 export const updateUser = async (id: string, userData: Partial<User>): Promise<User | null> => {
-  const response = await safeApiCall<User>(
-    () => apiClient.put(`/api/users/${id}`, userData),
+  const backendData = mapFrontendUserToBackend(userData);
+  const response = await safeApiCall<any>(
+    () => apiClient.put(`/api/users/${id}`, backendData),
     'Failed to update user'
   );
-  return response.success ? (response.data || null) : null;
+  if (response.success && response.data) {
+    return mapBackendUserToFrontend(response.data);
+  }
+  return null;
+};
+
+// Toggle user active status (uses backend's specific endpoint)
+export const toggleUserStatus = async (id: string): Promise<User | null> => {
+  const response = await safeApiCall<any>(
+    () => apiClient.patch(`/api/users/${id}/toggle-status`),
+    'Failed to toggle user status'
+  );
+  if (response.success && response.data) {
+    return mapBackendUserToFrontend(response.data);
+  }
+  return null;
 };
 
 // Delete user
@@ -67,11 +128,14 @@ export const getUsersByDepartment = async (department: string): Promise<User[]> 
 
 // Search users
 export const searchUsers = async (query: string): Promise<User[]> => {
-  const response = await safeApiCall<User[]>(
+  const response = await safeApiCall<any[]>(
     () => apiClient.get(`/api/users/search?q=${encodeURIComponent(query)}`),
     'Failed to search users'
   );
-  return response.success ? (response.data || []) : [];
+  if (response.success && response.data) {
+    return response.data.map(mapBackendUserToFrontend);
+  }
+  return [];
 };
 
 // Get current user profile
@@ -118,6 +182,7 @@ export default {
   getUserById,
   createUser,
   updateUser,
+  toggleUserStatus,
   deleteUser,
   getUsersByRole,
   getUsersByDepartment,

@@ -324,49 +324,49 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  /* Mobile responsive utilities */
+  /* Mobile responsive utilities - Fixed for better readability */
   .mobile-responsive-padding {
-    @apply px-2 md:px-6;
+    @apply px-3 md:px-6;
   }
 
   .mobile-responsive-text {
-    @apply text-xs md:text-sm lg:text-base;
+    @apply text-sm md:text-base lg:text-lg;
   }
 
   .mobile-responsive-spacing {
-    @apply space-y-2 md:space-y-6;
+    @apply space-y-3 md:space-y-6;
   }
 
   .mobile-responsive-title {
-    @apply text-sm md:text-md lg:text-lg;
+    @apply text-base md:text-lg lg:text-xl;
   }
 
   .mobile-responsive-subtitle {
-    @apply text-xs md:text-sm;
+    @apply text-sm md:text-base;
   }
 
-  /* New compact mobile utilities */
+  /* Updated mobile utilities for better readability */
   .mobile-text-tiny {
-    @apply text-[10px] md:text-xs;
+    @apply text-xs md:text-sm;
   }
 
   .mobile-text-small {
-    @apply text-xs md:text-sm;
+    @apply text-sm md:text-base;
   }
 
   .mobile-spacing-tight {
-    @apply space-y-1 md:space-y-2;
+    @apply space-y-2 md:space-y-4;
   }
 
   .mobile-padding-compact {
-    @apply p-2 md:p-4;
+    @apply p-3 md:p-4;
   }
 
   .mobile-gap-tight {
-    @apply gap-1 md:gap-2 lg:gap-3;
+    @apply gap-2 md:gap-3 lg:gap-4;
   }
 
   .mobile-header-compact {
-    @apply h-10 md:h-12;
+    @apply h-12 md:h-14;
   }
 }

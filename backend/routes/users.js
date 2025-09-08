@@ -321,4 +321,52 @@ router.get('/stats/overview', adminAuth, async (req, res) => {
   }
 });
 
+// @desc    Search users
+// @route   GET /api/users/search
+// @access  Private (Admin)
+router.get('/search', adminAuth, [
+  query('q').notEmpty().withMessage('Search query is required'),
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 100 })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const searchQuery = req.query.q;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const searchFilter = {
+      $or: [
+        { name: { $regex: searchQuery, $options: 'i' } },
+        { email: { $regex: searchQuery, $options: 'i' } },
+        { department: { $regex: searchQuery, $options: 'i' } }
+      ]
+    };
+
+    const users = await User.find(searchFilter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await User.countDocuments(searchFilter);
+
+    res.json({
+      success: true,
+      data: users,
+      pagination: {
+        page,
+        pages: Math.ceil(total / limit),
+        total
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

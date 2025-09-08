@@ -25,9 +25,11 @@ export default function UsersPage() {
   const { user, isAuthenticated } = useApp();
   const { 
     users, 
+    roles,
     isLoading: loading, 
     error,
     updateUser,
+    toggleUserStatus,
     deleteUser: deleteUserAction,
   } = useUserManager();
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,6 +42,23 @@ export default function UsersPage() {
   const [userToEdit, setUserToEdit] = useState<any>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [userToView, setUserToView] = useState<any>(null);
+
+  // Form state for edit dialog
+  const [editForm, setEditForm] = useState<{
+    name: string;
+    email: string;
+    role: 'user' | 'admin' | 'superadmin';
+    status: 'active' | 'inactive' | 'suspended';
+    department: string;
+    position: string;
+  }>({
+    name: '',
+    email: '',
+    role: 'user',
+    status: 'active',
+    department: '',
+    position: ''
+  });
 
   // Only super_admin can access this page
   if (!isAuthenticated || !user) {
@@ -69,6 +88,31 @@ export default function UsersPage() {
     { id: '3', name: 'Super Admin', description: 'Super Administrator', permissions: [], isDefault: false }
   ];
   const mockUserActivities = [];
+
+  // Helper function to open edit dialog with form initialization
+  const openEditDialog = (userData: any) => {
+    setUserToEdit(userData);
+    setEditForm({
+      name: userData.name || '',
+      email: userData.email || '',
+      role: (userData.role as 'user' | 'admin' | 'superadmin') || 'user',
+      status: (userData.status as 'active' | 'inactive' | 'suspended') || 'active',
+      department: userData.department || '',
+      position: userData.position || ''
+    });
+    setEditDialogOpen(true);
+  };
+
+  // Handle form submission for edit user
+  const handleEditSubmit = async () => {
+    if (!userToEdit) return;
+    
+    const success = await updateUser(userToEdit.id, editForm);
+    if (success) {
+      setEditDialogOpen(false);
+      setUserToEdit(null);
+    }
+  };
 
   const filteredUsers = users.filter(userData => {
     const matchesSearch = 
@@ -109,7 +153,7 @@ export default function UsersPage() {
     <ErrorBoundary>
       <MainLayout>
       <div className="space-y-6">
-        {/* Header */}
+         {/* Header */}
         <motion.div 
           className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
           initial={{ opacity: 0, y: -20 }}
@@ -117,8 +161,8 @@ export default function UsersPage() {
           transition={{ duration: 0.3 }}
         >
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Manajemen User</h1>
-            <p className="text-muted-foreground">Kelola user, role, dan permission sistem</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Manajemen User</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">Kelola user, role, dan permission sistem</p>
           </div>
           <div className="flex gap-2">
             <Dialog>
@@ -206,52 +250,52 @@ export default function UsersPage() {
 
         {/* Overview Cards */}
         <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
           <Card className="bg-primary/10 border-primary/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <Users className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm md:text-base font-medium">Total Users</CardTitle>
+              <Users className="h-4 w-4 md:h-5 md:w-5 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">{totalUsers}</div>
-              <p className="text-xs text-muted-foreground">Semua user terdaftar</p>
+              <div className="text-xl md:text-2xl font-bold text-primary">{totalUsers}</div>
+              <p className="text-xs md:text-sm text-muted-foreground">Semua user terdaftar</p>
             </CardContent>
           </Card>
 
           <Card className="bg-success/10 border-success/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-              <UserCheck className="h-4 w-4 text-success" />
+              <CardTitle className="text-sm md:text-base font-medium">Active Users</CardTitle>
+              <UserCheck className="h-4 w-4 md:h-5 md:w-5 text-success" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-success">{activeUsers}</div>
-              <p className="text-xs text-muted-foreground">User aktif</p>
+              <div className="text-xl md:text-2xl font-bold text-success">{activeUsers}</div>
+              <p className="text-xs md:text-sm text-muted-foreground">User aktif</p>
             </CardContent>
           </Card>
 
           <Card className="bg-warning/10 border-warning/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Admin Users</CardTitle>
-              <Shield className="h-4 w-4 text-warning" />
+              <CardTitle className="text-sm md:text-base font-medium">Admin Users</CardTitle>
+              <Shield className="h-4 w-4 md:h-5 md:w-5 text-warning" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-warning">{adminUsers}</div>
-              <p className="text-xs text-muted-foreground">Admin & super admin</p>
+              <div className="text-xl md:text-2xl font-bold text-warning">{adminUsers}</div>
+              <p className="text-xs md:text-sm text-muted-foreground">Admin & super admin</p>
             </CardContent>
           </Card>
 
           <Card className="bg-accent/10 border-accent/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Departments</CardTitle>
-              <Activity className="h-4 w-4 text-info" />
+              <CardTitle className="text-sm md:text-base font-medium">Departments</CardTitle>
+              <Activity className="h-4 w-4 md:h-5 md:w-5 text-info" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-info">{departments.length}</div>
-              <p className="text-xs text-muted-foreground">Total department</p>
+              <div className="text-xl md:text-2xl font-bold text-info">{departments.length}</div>
+              <p className="text-xs md:text-sm text-muted-foreground">Total department</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -334,70 +378,68 @@ export default function UsersPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>User</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Department</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Last Login</TableHead>
-                        <TableHead>Aksi</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredUsers.map((userData) => (
-                        <TableRow key={userData.id}>
-                          <TableCell>
-                            <div className="flex items-center space-x-3">
-                              <Avatar className="w-8 h-8">
-                                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                  {userData.name.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium text-foreground">{userData.name}</p>
-                                <p className="text-sm text-muted-foreground">{userData.position}</p>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-sm md:text-base">User</TableHead>
+                          <TableHead className="text-sm md:text-base">Email</TableHead>
+                          <TableHead className="text-sm md:text-base">Role</TableHead>
+                          <TableHead className="hidden md:table-cell text-sm md:text-base">Department</TableHead>
+                          <TableHead className="text-sm md:text-base">Status</TableHead>
+                          <TableHead className="hidden lg:table-cell text-sm md:text-base">Last Login</TableHead>
+                          <TableHead className="text-sm md:text-base">Aksi</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredUsers.map((userData) => (
+                          <TableRow key={userData.id}>
+                            <TableCell>
+                              <div className="flex items-center space-x-2 md:space-x-3">
+                                <Avatar className="w-6 h-6 md:w-8 md:h-8">
+                                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                    {userData.name.charAt(0)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0">
+                                  <p className="font-medium text-foreground text-sm md:text-base truncate">{userData.name}</p>
+                                  <p className="text-xs md:text-sm text-muted-foreground truncate">{userData.position}</p>
+                                </div>
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{userData.email}</TableCell>
-                          <TableCell>
-                            <Badge className={getRoleColor(userData.role)}>
-                               {userData.role === 'superadmin' ? 'Super Admin' : 
-                                userData.role === 'admin' ? 'Admin' : 'User'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{userData.department}</TableCell>
-                          <TableCell>
-                            <Badge className={getStatusColor(userData.status)}>
-                              {userData.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {userData.lastLogin ? userData.lastLogin.toLocaleString('id-ID') : 'Never'}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
+                            </TableCell>
+                            <TableCell className="text-sm md:text-base">{userData.email}</TableCell>
+                            <TableCell>
+                              <Badge className={`${getRoleColor(userData.role)} text-xs md:text-sm`}>
+                                 {userData.role === 'superadmin' ? 'Super Admin' : 
+                                  userData.role === 'admin' ? 'Admin' : 'User'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell text-sm md:text-base">{userData.department}</TableCell>
+                            <TableCell>
+                              <Badge className={`${getStatusColor(userData.status)} text-xs md:text-sm`}>
+                                {userData.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="hidden lg:table-cell text-xs md:text-sm text-muted-foreground">
+                              {userData.lastLogin ? userData.lastLogin.toLocaleString('id-ID') : 'Never'}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => {
+                                    setUserToView(userData);
+                                    setViewDialogOpen(true);
+                                  }}
+                                  title="View user details"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
                                <Button 
                                  variant="ghost" 
                                  size="sm"
-                                 onClick={() => {
-                                   setUserToView(userData);
-                                   setViewDialogOpen(true);
-                                 }}
-                                 title="View user details"
-                               >
-                                 <Eye className="w-4 h-4" />
-                               </Button>
-                               <Button 
-                                 variant="ghost" 
-                                 size="sm"
-                                 onClick={() => {
-                                   setUserToEdit(userData);
-                                   setEditDialogOpen(true);
-                                 }}
+                                 onClick={() => openEditDialog(userData)}
                                  title="Edit user"
                                >
                                  <Edit className="w-4 h-4" />
@@ -407,9 +449,9 @@ export default function UsersPage() {
                                    variant="ghost" 
                                    size="sm"
                                    onClick={async () => {
-                                     const success = await updateUser(userData.id, { status: 'inactive' });
+                                     const success = await toggleUserStatus(userData.id);
                                      if (success) {
-                                       toast.success(`User ${userData.name} has been suspended`);
+                                       toast.success(`User ${userData.name} telah dinonaktifkan`);
                                      }
                                    }}
                                    title="Suspend user"
@@ -421,9 +463,9 @@ export default function UsersPage() {
                                    variant="ghost" 
                                    size="sm"
                                    onClick={async () => {
-                                     const success = await updateUser(userData.id, { status: 'active' });
+                                     const success = await toggleUserStatus(userData.id);
                                      if (success) {
-                                       toast.success(`User ${userData.name} has been activated`);
+                                       toast.success(`User ${userData.name} telah diaktifkan`);
                                      }
                                    }}
                                    title="Activate user"
@@ -449,7 +491,8 @@ export default function UsersPage() {
                         </TableRow>
                       ))}
                     </TableBody>
-                  </Table>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -461,47 +504,65 @@ export default function UsersPage() {
                   <CardDescription>Manajemen role dan permission sistem</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Role Name</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Permissions</TableHead>
-                        <TableHead>Users</TableHead>
-                        <TableHead>Default</TableHead>
-                        <TableHead>Aksi</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {mockRoles.map((role) => (
-                        <TableRow key={role.id}>
-                          <TableCell className="font-medium">{role.name}</TableCell>
-                          <TableCell>{role.description}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {role.permissions.length} permissions
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {users.filter(u => u.role === role.name.toLowerCase().replace(' ', '_')).length}
-                          </TableCell>
-                          <TableCell>
-                            {role.isDefault && <Badge variant="secondary">Default</Badge>}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="sm">
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-sm md:text-base">Role Name</TableHead>
+                          <TableHead className="text-sm md:text-base">Description</TableHead>
+                          <TableHead className="text-sm md:text-base">Users Count</TableHead>
+                          <TableHead className="text-sm md:text-base">Default</TableHead>
+                          <TableHead className="text-sm md:text-base">Aksi</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {mockRoles.map((role) => {
+                          const roleKey = role.name.toLowerCase().replace(' ', '');
+                          const userCount = users.filter(u => 
+                            u.role === roleKey || 
+                            (role.name === 'Super Admin' && u.role === 'superadmin')
+                          ).length;
+                          
+                          return (
+                            <TableRow key={role.id}>
+                              <TableCell className="font-medium text-sm md:text-base">{role.name}</TableCell>
+                              <TableCell className="text-sm md:text-base">{role.description}</TableCell>
+                              <TableCell className="text-sm md:text-base">
+                                <Badge variant="secondary">
+                                  {userCount} users
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-sm md:text-base">
+                                {role.isDefault && <Badge variant="secondary">Default</Badge>}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => {
+                                      toast.info(`Viewing details for ${role.name} role`);
+                                    }}
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => {
+                                      toast.info(`Editing permissions for ${role.name} role`);
+                                    }}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -646,12 +707,13 @@ export default function UsersPage() {
             </DialogHeader>
             {userToEdit && (
               <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="edit-name">Nama Lengkap</Label>
                     <Input 
                       id="edit-name" 
-                      defaultValue={userToEdit.name}
+                      value={editForm.name}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="Masukkan nama lengkap" 
                     />
                   </div>
@@ -660,15 +722,19 @@ export default function UsersPage() {
                     <Input 
                       id="edit-email" 
                       type="email" 
-                      defaultValue={userToEdit.email}
+                      value={editForm.email}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
                       placeholder="user@telnet.co.id" 
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="edit-role">Role</Label>
-                    <Select defaultValue={userToEdit.role}>
+                    <Select 
+                      value={editForm.role} 
+                      onValueChange={(value) => setEditForm(prev => ({ ...prev, role: value as 'user' | 'admin' | 'superadmin' }))}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih role" />
                       </SelectTrigger>
@@ -681,7 +747,10 @@ export default function UsersPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="edit-status">Status</Label>
-                    <Select defaultValue={userToEdit.status}>
+                    <Select 
+                      value={editForm.status} 
+                      onValueChange={(value) => setEditForm(prev => ({ ...prev, status: value as 'active' | 'inactive' | 'suspended' }))}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih status" />
                       </SelectTrigger>
@@ -693,10 +762,13 @@ export default function UsersPage() {
                     </Select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="edit-department">Department</Label>
-                    <Select defaultValue={userToEdit.department}>
+                    <Select 
+                      value={editForm.department} 
+                      onValueChange={(value) => setEditForm(prev => ({ ...prev, department: value }))}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih department" />
                       </SelectTrigger>
@@ -711,7 +783,8 @@ export default function UsersPage() {
                     <Label htmlFor="edit-position">Posisi</Label>
                     <Input 
                       id="edit-position" 
-                      defaultValue={userToEdit.position}
+                      value={editForm.position}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, position: e.target.value }))}
                       placeholder="Jabatan/posisi" 
                     />
                   </div>
@@ -722,14 +795,7 @@ export default function UsersPage() {
               <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
                 Batal
               </Button>
-              <Button 
-                onClick={async () => {
-                  // TODO: Implement actual form submission with form data
-                  console.log('Update user:', userToEdit);
-                  setEditDialogOpen(false);
-                  setUserToEdit(null);
-                }}
-              >
+              <Button onClick={handleEditSubmit}>
                 Simpan Perubahan
               </Button>
             </DialogFooter>
